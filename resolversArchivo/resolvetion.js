@@ -237,7 +237,7 @@ const nuevo_boton = async(req, res) => {
     if(!id_user || !name_event){
         return res.status(400).json({
             status: 400,
-            mensaje: 'los no puedes enviar campos vacios'
+            mensaje: 'No puedes enviar campos vacios'
         })
     };
 
