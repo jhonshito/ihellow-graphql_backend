@@ -240,7 +240,7 @@ const { datos_metricas, login, nuevo_boton, lista_service, estadistica_service }
 
 
 const router = Router();
-router.get('/metricas', datos_metricas);
+router.post('/metricas', datos_metricas);
 router.post('/login', login);
 router.post('/agregar_boton', nuevo_boton);
 router.get('/lista_service', lista_service);

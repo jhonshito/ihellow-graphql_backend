@@ -51,6 +51,28 @@ const resolvers = {
             const client = await pool.connect();
 
             try {
+
+                if(!fechaInicial || !fechaFinal){
+                    const query = `
+                        SELECT COUNT(*) FROM tblog WHERE name_event <> 'apertura' AND date = cast(now() as date)
+                    `;
+                    const result = await client.query(query);
+                    const count = result.rows[0].count;
+
+                    const secondQuery = `
+                        SELECT COUNT(*) FROM tblog WHERE name_event = 'apertura' AND date = cast(now() as date)
+                    `;
+
+                    const resultados = await client.query(secondQuery);
+                    const cantidad =  resultados.rows[0].count;
+
+                    return {
+                        status: 200,
+                        mensaje: "resumen de datos",
+                        clisk: count, 
+                        aperturas: cantidad
+                    }
+                }
                 
                 const query = `
                     SELECT COUNT(*) FROM tblog WHERE name_event <> 'apertura'
@@ -90,6 +112,20 @@ const resolvers = {
             const cliente = await pool.connect();
 
             try {
+
+                if(!fechaInicial || !fechaFinal){
+                    const query = `
+                        SELECT * FROM tblog WHERE date = cast(now() as date)
+                    `;
+                    const result = await cliente.query(query);
+                    const datos = result.rows;
+                    return {
+                        status: 200,
+                        mensaje: "lista de datos",
+                        datos
+                    }
+                }
+
                 const query = `
                     SELECT * FROM tblog WHERE date >= $1 AND date <= $2
                     ORDER BY date ASC
@@ -119,6 +155,31 @@ const resolvers = {
             const client = await pool.connect();
             
             try {
+
+                if(!fechaInicial || !fechaFinal){
+                    const query = `
+                        SELECT name_event, COUNT(*) AS count
+                        FROM tblog
+                        WHERE date = cast(now() as date)
+                        GROUP BY name_event;
+                    `
+                    const result = await client.query(query);
+                    const data = result.rows;
+                    let total = 0;
+                    const estadisticas = {};
+
+                    for (const row of data) {
+                      estadisticas[row.name_event] = row.count;
+                      total += parseInt(row.count);
+                    }
+            
+                    return {
+                      status: 200,
+                      mensaje: "Datos disponibles",
+                      estadisticas,
+                      total
+                    };
+                }
 
                 const query = `
                     SELECT name_event, COUNT(*) AS count
@@ -194,13 +255,6 @@ const datos_metricas = async(req, res) => {
 
     const { fechaInicial, fechaFinal } = req.body
 
-    if(!fechaInicial || !fechaFinal){
-        return res.status(400).json({
-            status: 400,
-            mensaje: 'las fechas son requeridas'
-        })
-    };
-
     const context = {}; // Puedes ajustar el contexto si es necesario
 
     const resumen = await resolvers.Query.resumen_boton(
@@ -252,13 +306,6 @@ const nuevo_boton = async(req, res) => {
 const lista_service = async(req, res) => {
     const { fechaInicial, fechaFinal } = req.body;
 
-    if(!fechaInicial || !fechaFinal){
-        return res.status(400).json({
-            status: 400,
-            mensaje: 'las fechas son requeridas'
-        })
-    };
-
     const lista = await resolvers.Query.lista_service(null, {
         fechaInicial, fechaFinal
     });
@@ -268,13 +315,6 @@ const lista_service = async(req, res) => {
 //esta es la función que me dice la cantidad de veces que esta un boton en la base de datos
 const estadistica_service = async(req, res) => {
     const { fechaInicial, fechaFinal } = req.body
-
-    if(!fechaInicial || !fechaFinal){
-        return res.status(400).json({
-            status: 400,
-            mensaje: 'las fechas son requeridas'
-        })
-    };
 
     const data = await resolvers.Query.estadistica_service(null, {
         fechaInicial, fechaFinal
