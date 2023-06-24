@@ -1,5 +1,7 @@
 
 // documentacion de emergencia
+
+
 /**
 * @swagger
 * tags:
@@ -10,7 +12,6 @@
 *   - name: Agregar Botón
 *     description: Operaciones relacionadas con agregar botón
 */
-
 
 
 /**

@@ -5,8 +5,11 @@ const swaggerDef = require("./swaggerDef");
 
 const spacs = swaggerJsdoc({
     swaggerDefinition: swaggerDef,
-    apis: ["./routers/home.router.js"]
+    apis: ["./routers/docs.router.js"]
 });
+
+// esta es la ruta que funciona
+// "./routers/docs.router.js"
 
 module.exports = (app) => {
     app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(spacs))

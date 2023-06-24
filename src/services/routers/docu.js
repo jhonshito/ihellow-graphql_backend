@@ -1,20 +1,15 @@
-const { Router } = require('express');
-const { datos_metricas, login, nuevo_boton, lista_service, estadistica_service } = require('../resolversArchivo/resolvetion');
-
-
-//documentacion de la api
+// documentacion de emergencia
 
 /**
- *@swagger
- * tags:
- *   - name: Usuarios
- *     description: Operaciones relacionadas con usuarios
- *   - name: Métricas
- *     description: Operaciones relacionadas con métricas
- *   - name: Agregar Botón
- *     description: Operaciones relacionadas con agregar botón
- */
-
+* @swagger
+* tags:
+*   - name: Usuarios
+*     description: Operaciones relacionadas con usuarios
+*   - name: Métricas
+*     description: Operaciones relacionadas con métricas
+*   - name: Agregar Botón
+*     description: Operaciones relacionadas con agregar botón
+*/
 
 /**
  * @swagger
@@ -237,13 +232,3 @@ const { datos_metricas, login, nuevo_boton, lista_service, estadistica_service }
  *                 description: Mensajes de error y alertas sobres campos requeridos
  *  
 */
-
-
-const router = Router();
-router.post('/metricas', datos_metricas);
-router.post('/login', login);
-router.post('/agregar_boton', nuevo_boton);
-router.get('/lista_service', lista_service);
-router.get('/estadistica', estadistica_service);
-
-module.exports = router
