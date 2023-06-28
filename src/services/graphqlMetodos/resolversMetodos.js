@@ -1,5 +1,6 @@
 const { pool } = require('../../config/database/db');
 const cloudinary = require('../../config/cloudinary/cloundi');
+const moment = require("moment");
 
 //querys de graphql
 const resolvers = {
@@ -129,6 +130,152 @@ const resolvers = {
                 }
             }finally{
                 client.release();
+            }
+        },
+
+        // findUsuario
+        dataUsuario: async(_, {id}) => {
+            try {
+                const client = await pool.connect();
+
+                const query = `
+                    SELECT * FROM tbuser WHERE id = $1
+                `;
+                const value = [id];
+                const result = await client.query(query, value);
+                const data = result.rows[0];
+
+                client.release();
+
+                if(!data){
+                    return {
+                        status: 404,
+                        mensaje: 'No hay usuario'
+                    }
+                }
+
+                return {
+                    status: 200,
+                    mensaje: 'Usuario',
+                    data
+                }
+                
+            } catch (error) {
+                return {
+                    status: 500,
+                    mensaje: 'Ocurrio un error',
+                    error
+                }
+            }
+        },
+
+        // grafica
+        grafica_data: async(_,{ id_landing, fechaInicial, fechaFinal }) => {
+            try {
+                const client = await pool.connect();
+
+                const queryId = `
+                    SELECT * FROM tblanding WHERE id = $1
+                `;
+                const valueId = [id_landing];
+                const resultId = await client.query(queryId, valueId);
+                const dataId = resultId.rows[0]
+
+                if(!dataId){
+                    return {
+                        status: 404,
+                        mensaje: `No existe landing con este id ${id_landing}`
+                    }
+                }
+
+                if(!fechaInicial || !fechaFinal){
+                    const query = `
+                        SELECT date,name_event, count(name_event) 
+                        FROM tblog
+                        WHERE fid_landing = $1
+                        AND date BETWEEN cast(now() as date) AND cast(now() as date)
+                        GROUP BY date,name_event
+                        ORDER BY date,name_event
+                    `;
+                    const valueEstadisticas = [id_landing];
+                    const result = await client.query(query, valueEstadisticas);
+                    const data = result.rows;
+
+                    const miMapa = new Map();
+
+                    // Iterar sobre los objetos de datos
+                    data.forEach(obj => {
+                        const { name_event, count } = obj;
+                    
+                        // Verificar si ya existe una entrada para el evento en el mapa
+                        if (miMapa.has(name_event)) {
+                          // Si existe, agregar el valor al arreglo existente
+                          const arregloExistente = miMapa.get(name_event);
+                          arregloExistente.push(Number(count));
+                        } else {
+                          // Si no existe, crear un nuevo arreglo con el valor
+                          miMapa.set(name_event, [Number(count)]);
+                        }
+                    });
+  
+                    // Crear el objeto final en el formato deseado
+                    const arrayData = Array.from(miMapa, ([name, data]) => ({ name, data }));
+
+                    // let totalCount = 0;
+
+                    // if(data.length > 0){
+                    //     data.forEach(obj => {
+                    //     totalCount += parseInt(obj.count);
+                    //     });
+                    // }
+                    return {
+                      status: 200,
+                      mensaje: "Datos disponibles",
+                      data: arrayData,
+                    //   totalCount: arrayData
+                    };
+                }
+
+                const query = `
+                    SELECT date,name_event, count(name_event) 
+                    FROM tblog
+                    WHERE fid_landing = $1
+                    AND date BETWEEN $2 AND $3
+                    GROUP BY date,name_event
+                    ORDER BY date,name_event
+                `;
+                const value = [id_landing, fechaInicial, fechaFinal];
+                const resultado = await client.query(query, value);
+                const data = resultado.rows;
+
+                client.release();
+
+                // Definir las fechas de inicio y fin
+                const fechaInicio = moment(fechaInicial || new Date, 'YYYY/MM/DD');
+                const fechaFin = moment(fechaFinal || new Date, 'YYYY/MM/DD');
+
+                // Crear una matriz para almacenar los días
+                const listaDias = [];
+ 
+                // Iterar a través de las fechas y agregarlas a la matriz
+                for (let fecha = fechaInicio; fecha.isSameOrBefore(fechaFin); fecha.add(1, 'day')) {
+                  listaDias.push(fecha.format('YYYY/MM/DD'));
+                };
+                
+                return {
+                    status: 200,
+                    mensaje: 'Data grafica',
+                    data,
+                    listaDias
+                }
+
+                
+            } catch (error) {
+                return {
+                    status: 500,
+                    mensaje: 'Ocurrio algo',
+                    error
+                }
             }
         },
 
@@ -365,7 +512,7 @@ const resolvers = {
                 `;
                 const value = [id_user];
                 const list_result = await client.query(query, value);
-                const result = list_result.rows
+                const result = list_result.rows[0]
 
                 client.release();
 
@@ -393,7 +540,7 @@ const resolvers = {
                 `;
                 const value = [id_card];
                 const result_landing = await client.query(query, value);
-                const result = result_landing.rows;
+                const result = result_landing.rows[0];
 
                 client.release();
 
@@ -419,23 +566,17 @@ const resolvers = {
             }
         },
 
-        lis_campany_by_id: async(_, {id_user, role}) => {
+        lis_campany_by_id: async(_, {id_user}) => {
 
             try {
                 const client = await pool.connect();
-
-                if(role !== true){
-                    return {
-                        mensaje: 'No tienes permiso para esta funcion.'
-                    }
-                }
 
                 const query = `
                     SELECT * FROM tbcompany WHERE id_user = $1
                 `;
                 const value = [id_user];
                 const result_company = await client.query(query, value);
-                const result = result_company.rows;
+                const result = result_company.rows[0];
 
                 if(result.length <= 0){
                     return {
@@ -711,8 +852,188 @@ const resolvers = {
             }
      
     
+        },
+
+        // agregar las imagenes de la card a cloudinary
+        add_img_card: async(_, {id_card, tempFilePath, name}) => {
+            const client = await pool.connect();
+
+            try {
+
+                const query = `
+                    SELECT * FROM tbcard WHERE id = $1;
+                `;
+                const value = [id_card];
+                const result = await client.query(query, value);
+                const data = result.rows[0];
+
+                if(!data){
+                    return {
+                        status: 404,
+                        mensaje: `No existe card con este id ${id}`
+                    }
+                }
+
+                const uploaded = await cloudinary.uploader.upload(tempFilePath, {
+                    public_id: `${id_card}${name}`,
+                    overwrite: true,
+                    filename_override: name
+                });
+                const { public_id, url, original_filename } = uploaded;
+
+                return {
+                    status: 200,
+                    public_id,
+                    url,
+                    original_filename
+                }
+                
+            } catch (error) {
+                return {
+                    status: 500,
+                    mensaje: 'Ocurrio un error',
+                    error
+                }
+            }finally{
+                client.release();
+            }
+        },
+
+        updateCard: async(_, {id_card, title, addresses, side_a, side_b, logo_card, qr}) => {
+            
+            try {
+                // const client = pool.connect();
+
+                // aqui va la logica para actualizar la card
+
+                // client.release();
+
+                return {
+                    status: 200,
+                    update: true,
+                    id_card,
+                    title, 
+                    addresses,
+                    side_a,
+                    side_b, 
+                    logo_card, 
+                    qr
+                }
+                
+            } catch (error) {
+                return {
+                    status: 500,
+                    mensaje: 'Ocurrio un error',
+                    error
+                }
+            }
+
+        },
+
+        updateLanding: async(_, {alias, url, seo, parameters}) => {
+            try {
+                // const clint = await pool.connect();
+
+                // aqui va lo logica de actualizar en la base de datos
+
+                // clint.release();
+
+                return {
+                    status: 200,
+                    update: true,
+                    mensaje: 'actualizado',
+                    alias,
+                    url,
+                    seo,
+                    parameters
+                }
+                
+            } catch (error) {
+                return {
+                    status: 500,
+                    mensaje: 'Ocurrio un error',
+                    error
+                }
+            }
+        },
+
+        updataCompany: async(_, {name, identify, phone, addresses, country, city, parameters, logo_company}) => {
+    
+            try {
+                // const client = await pool.connect();
+    
+                // aqui va lo logica para actualizar el company
+    
+                // client.release();
+    
+                return {
+                    status: 200,
+                    update: true,
+                    mensaje: 'company actulizado',
+                    name,
+                    identify,
+                    phone,
+                    addresses,
+                    country,
+                    city,
+                    parameters,
+                    logo_company
+                }
+                
+            } catch (error) {
+                return {
+                    status: 500,
+                    mensaje: 'Ocurrio un error.',
+                    error
+                }
+            }
+        },
+
+        add_logo_company: async(_,{id_company, tempFilePath, name}) => {
+            const client = await pool.connect();
+
+            try {
+
+                const query = `
+                    SELECT * FROM tbcompany WHERE id = $1;
+                `;
+                const value = [id_company];
+                const result = await client.query(query, value);
+                const data = result.rows[0];
+
+                if(!data){
+                    return {
+                        status: 404,
+                        mensaje: `No existe company con este id ${id}`
+                    }
+                }
+
+                const uploaded = await cloudinary.uploader.upload(tempFilePath, {
+                    public_id: `${id_company}${name}`,
+                    overwrite: true,
+                    filename_override: name
+                });
+                const { public_id, url, original_filename } = uploaded;
+
+                return {
+                    status: 200,
+                    public_id,
+                    url,
+                    original_filename
+                }
+                
+            } catch (error) {
+                return {
+                    status: 500,
+                    mensaje: 'Ocurrio un error',
+                    error
+                }
+            }finally{
+                client.release();
+            }
         }
     }
+
 
 }
 

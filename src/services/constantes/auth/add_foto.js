@@ -18,8 +18,6 @@ const add_foto = async(req, res) => {
         })
     }
 
-    console.log(file);
-
     const { tempFilePath } = file;
 
     const foto = await resolvers.Mutation.add_fotoPerfil(null, {id, tempFilePath});

@@ -2,7 +2,6 @@ const { resolvers } = require('../../graphqlMetodos/resolversMetodos')
 
 const lis_campany_by_id = async(req, res) => {
     const id = req.params.id;
-    const {role} = req.body;
 
     if(!id){
         return res.status(400).json({
@@ -12,7 +11,7 @@ const lis_campany_by_id = async(req, res) => {
     }
 
     const response = await resolvers.Query.lis_campany_by_id(null, {
-        id_user: id, role
+        id_user: id
     });
     res.send(response);
 }
