@@ -3,7 +3,7 @@ const { convertirToJson } = require("./mutacionJson");
 
 
 const update_landing = async(req, res) => {
-    const { id_landing, alias, url, seo, pagina_web,linkendin,instagram,facebook,twitter,tiktok,canal_youtube,enlace1,enlace2,enlace3,ciudad,barrio,direccion, recomendacion_card
+    const { id_landing, alias, url, seo, linkendin,instagram,facebook,twitter,tiktok,canal_youtube,enlace1,enlace2,enlace3,ciudad,barrio,direccion, recomendacion_card
     } = req.body
 
     if(!id_landing){
@@ -13,7 +13,7 @@ const update_landing = async(req, res) => {
         });
     }
 
-    const parameters = convertirToJson(pagina_web,linkendin,instagram,facebook,twitter,tiktok,canal_youtube,enlace1,enlace2,enlace3,ciudad,barrio,direccion, recomendacion_card );
+    const parameters = convertirToJson(linkendin,instagram,facebook,twitter,tiktok,canal_youtube,enlace1,enlace2,enlace3,ciudad,barrio,direccion, recomendacion_card );
 
     const respuesta = await resolvers.Mutation.updateLanding(null, {id_landing, alias, url, seo, parameters});
     res.send(respuesta)

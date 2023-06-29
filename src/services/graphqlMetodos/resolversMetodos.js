@@ -237,14 +237,18 @@ const resolvers = {
                       objeto.data[diaIndex] = parseInt(dato.count);
                     }
                 });
-
-                    let totalCount = 0;
-
-                    if(data.length > 0){
-                        data.forEach(obj => {
-                        totalCount += parseInt(obj.count);
-                        });
-                    }
+  
+                let totalCount = 0;
+                let maxClicks = 0;
+  
+                json.arrayData.forEach(obj => {
+                  const eventMax = Math.max(...obj.data);
+                  if (eventMax > maxClicks) {
+                    maxClicks = eventMax;
+                  }
+                });
+  
+                totalCount = maxClicks;
                     return {
                       status: 200,
                       mensaje: "Datos disponibles",
@@ -303,21 +307,24 @@ const resolvers = {
                       objeto.data[diaIndex] = parseInt(dato.count);
                     }
                 });
-
+  
                 let totalCount = 0;
-
-                if(data.length > 0){
-                    data.forEach(obj => {
-                    totalCount += parseInt(obj.count);
-                    });
-                }
+                let maxClicks = 0;
+  
+                json.arrayData.forEach(obj => {
+                  const eventMax = Math.max(...obj.data);
+                  if (eventMax > maxClicks) {
+                    maxClicks = eventMax;
+                  }
+                });
+  
+                totalCount = maxClicks;
                 
                 return {
                     status: 200,
                     mensaje: 'Data grafica',
                     data: json,
-                    listaDias,
-                    totalCount
+                    totalCount,
                 }
 
                 
