@@ -201,38 +201,55 @@ const resolvers = {
                     const result = await client.query(query, valueEstadisticas);
                     const data = result.rows;
 
-                    const miMapa = new Map();
+                    // Definir las fechas de inicio y fin
+                const fechaInicio = moment(fechaInicial || new Date, 'YYYY/MM/DD');
+                const fechaFin = moment(fechaFinal || new Date, 'YYYY/MM/DD');
 
-                    // Iterar sobre los objetos de datos
-                    data.forEach(obj => {
-                        const { name_event, count } = obj;
-                    
-                        // Verificar si ya existe una entrada para el evento en el mapa
-                        if (miMapa.has(name_event)) {
-                          // Si existe, agregar el valor al arreglo existente
-                          const arregloExistente = miMapa.get(name_event);
-                          arregloExistente.push(Number(count));
-                        } else {
-                          // Si no existe, crear un nuevo arreglo con el valor
-                          miMapa.set(name_event, [Number(count)]);
-                        }
-                    });
-  
-                    // Crear el objeto final en el formato deseado
-                    const arrayData = Array.from(miMapa, ([name, data]) => ({ name, data }));
+                // Crear una matriz para almacenar los días
+                const listaDias = [];
+ 
+                // Iterar a través de las fechas y agregarlas a la matriz
+                for (let fecha = fechaInicio; fecha.isSameOrBefore(fechaFin); fecha.add(1, 'day')) {
+                  listaDias.push(fecha.format('YYYY/MM/DD'));
+                };
 
-                    // let totalCount = 0;
+                // Obtener la lista de eventos única
+                const eventosUnicos = [...new Set(data.map(dato => dato.name_event))];
 
-                    // if(data.length > 0){
-                    //     data.forEach(obj => {
-                    //     totalCount += parseInt(obj.count);
-                    //     });
-                    // }
+                // Crear el objeto json dinámico
+                const json = {
+                  total: data.length,
+                  arrayData: [],
+                  listaDias: listaDias.map(dia => dia.replace(/\//g, "-"))
+                };
+
+                // Inicializar los datos en cero para cada evento y día
+                eventosUnicos.forEach(evento => {
+                  json.arrayData.push({ name: evento, data: Array(json.listaDias.length).fill(0) });
+                });
+
+                // Asignar los valores correctos a cada evento y día
+                data.forEach(dato => {
+                    const fecha = dato.date instanceof Date ? dato.date.toISOString().split("T")[0] : "";
+                    const diaIndex = json.listaDias.indexOf(fecha);
+                    const objeto = json.arrayData.find(obj => obj.name === dato.name_event);
+                    if (objeto && diaIndex !== -1) {
+                      objeto.data[diaIndex] = parseInt(dato.count);
+                    }
+                });
+
+                    let totalCount = 0;
+
+                    if(data.length > 0){
+                        data.forEach(obj => {
+                        totalCount += parseInt(obj.count);
+                        });
+                    }
                     return {
                       status: 200,
                       mensaje: "Datos disponibles",
-                      data: arrayData,
-                    //   totalCount: arrayData
+                      data: json,
+                      totalCount
                     };
                 }
 
@@ -261,16 +278,51 @@ const resolvers = {
                 for (let fecha = fechaInicio; fecha.isSameOrBefore(fechaFin); fecha.add(1, 'day')) {
                   listaDias.push(fecha.format('YYYY/MM/DD'));
                 };
+
+                // Obtener la lista de eventos única
+                const eventosUnicos = [...new Set(data.map(dato => dato.name_event))];
+
+                // Crear el objeto json dinámico
+                const json = {
+                  total: data.length,
+                  arrayData: [],
+                  listaDias: listaDias.map(dia => dia.replace(/\//g, "-"))
+                };
+
+                // Inicializar los datos en cero para cada evento y día
+                eventosUnicos.forEach(evento => {
+                  json.arrayData.push({ name: evento, data: Array(json.listaDias.length).fill(0) });
+                });
+
+                // Asignar los valores correctos a cada evento y día
+                data.forEach(dato => {
+                    const fecha = dato.date instanceof Date ? dato.date.toISOString().split("T")[0] : "";
+                    const diaIndex = json.listaDias.indexOf(fecha);
+                    const objeto = json.arrayData.find(obj => obj.name === dato.name_event);
+                    if (objeto && diaIndex !== -1) {
+                      objeto.data[diaIndex] = parseInt(dato.count);
+                    }
+                });
+
+                let totalCount = 0;
+
+                if(data.length > 0){
+                    data.forEach(obj => {
+                    totalCount += parseInt(obj.count);
+                    });
+                }
                 
                 return {
                     status: 200,
                     mensaje: 'Data grafica',
-                    data,
-                    listaDias
+                    data: json,
+                    listaDias,
+                    totalCount
                 }
 
                 
             } catch (error) {
+                console.log(error)
                 return {
                     status: 500,
                     mensaje: 'Ocurrio algo',
@@ -484,6 +536,7 @@ const resolvers = {
                 const card_value = [fid_company];
                 const card_result = await client.query(card_query, card_value)
                 const cards = card_result.rows;
+                
 
             client.release();
 
@@ -715,13 +768,13 @@ const resolvers = {
             try {
 
                 const uploaded = await cloudinary.uploader.upload(tempFilePath, {
-                    public_id: id,
+                    public_id: `user_${id}_fotoPerfil`,
                     overwrite: true
                 });
                 const { public_id, url } = uploaded;
 
                 const updateQuery = `
-                  UPDATE tbuser
+                  UPDATE tbusers
                   SET logo = $1
                   WHERE id = $2;
                 `;
@@ -875,7 +928,7 @@ const resolvers = {
                 }
 
                 const uploaded = await cloudinary.uploader.upload(tempFilePath, {
-                    public_id: `${id_card}${name}`,
+                    public_id: `card_${id_card}_${name}`,
                     overwrite: true,
                     filename_override: name
                 });
@@ -902,22 +955,29 @@ const resolvers = {
         updateCard: async(_, {id_card, title, addresses, side_a, side_b, logo_card, qr}) => {
             
             try {
-                // const client = pool.connect();
+                const client = await pool.connect();
 
-                // aqui va la logica para actualizar la card
+                const query = `
+                    UPDATE public.tbcard
+                    SET addresses_delivery= $3, title= $2, logo= $6, side_a= $4, side_b= $5, qr= $7, complete=true
+                    WHERE id= $1;
+                `;
+                const value = [id_card, title, addresses, side_a, side_b, logo_card, qr];
+                const result = await client.query(query, value);
+                const data = result.rowCount;
 
-                // client.release();
+                client.release();
+
+                if(data <= 0){
+                    return {
+                        status: 404,
+                        mensaje: 'No se pudo actualizar los datos.'
+                    }
+                }
 
                 return {
                     status: 200,
                     update: true,
-                    id_card,
-                    title, 
-                    addresses,
-                    side_a,
-                    side_b, 
-                    logo_card, 
-                    qr
                 }
                 
             } catch (error) {
@@ -930,22 +990,33 @@ const resolvers = {
 
         },
 
-        updateLanding: async(_, {alias, url, seo, parameters}) => {
+        updateLanding: async(_, {id_landing, alias, url, seo, parameters}) => {
             try {
-                // const clint = await pool.connect();
+                const client = await pool.connect();
 
-                // aqui va lo logica de actualizar en la base de datos
+                const query = `
+                    UPDATE public.tblanding
+                    SET alias= $2, url= $3, seo= $4, parameters= $5, complete=true
+                    WHERE id=$1;
+                `;
+                const value = [id_landing, alias, url, seo, {}];
+                const result = await client.query(query, value);
+                const data = result.rowCount;
 
-                // clint.release();
+                client.release();
+
+                if(data <= 0){
+                    return {
+                        status: 404,
+                        mensaje: 'No se pudo actualizar los datos.',
+                        update: false
+                    }
+                }
 
                 return {
                     status: 200,
-                    update: true,
-                    mensaje: 'actualizado',
-                    alias,
-                    url,
-                    seo,
-                    parameters
+                    mensaje: 'Datos actualizados',
+                    update: true
                 }
                 
             } catch (error) {
@@ -957,27 +1028,34 @@ const resolvers = {
             }
         },
 
-        updataCompany: async(_, {name, identify, phone, addresses, country, city, parameters, logo_company}) => {
+        updataCompany: async(_, {id_company, name, identify, phones, addresses, country, city, parameters, logo_company}) => {
     
             try {
-                // const client = await pool.connect();
+                const client = await pool.connect();
     
-                // aqui va lo logica para actualizar el company
+                const query = `
+                    UPDATE public.tbcompany
+                    SET name= $2, identify= $3, phones= $4, addresses= $5, country= $6, city= $7, parameters= $8, logo= $9, complete=true
+                    WHERE id= $1;
+                `;
+                const value = [id_company, name, identify, phones, addresses, country, city, {}, logo_company];
+                const result = await client.query(query, value);
+                const data = result.rowCount;
     
-                // client.release();
+                client.release();
+
+                if(data <= 0){
+                    return {
+                        status: 404,
+                        mensaje: 'No se pudo actualizar los datos.',
+                        update: false
+                    }
+                }
     
                 return {
                     status: 200,
                     update: true,
-                    mensaje: 'company actulizado',
-                    name,
-                    identify,
-                    phone,
-                    addresses,
-                    country,
-                    city,
-                    parameters,
-                    logo_company
+                    mensaje: 'Company actulizado',
                 }
                 
             } catch (error) {
@@ -1009,7 +1087,7 @@ const resolvers = {
                 }
 
                 const uploaded = await cloudinary.uploader.upload(tempFilePath, {
-                    public_id: `${id_company}${name}`,
+                    public_id: `company_${id_company}_${name}`,
                     overwrite: true,
                     filename_override: name
                 });
