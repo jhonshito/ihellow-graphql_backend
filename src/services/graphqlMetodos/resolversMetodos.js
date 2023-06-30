@@ -611,6 +611,18 @@ const resolvers = {
                     }
                 }
 
+                // console.log(result.parameters)
+                const dataParameters = {}
+
+                if (result && result.parameters && result.parameters.links) {
+                    result.parameters.links.forEach((link) => {
+                      dataParameters[link.nombre] = link.url;
+                    });
+                
+                    result.parameters.links = dataParameters;
+                    // console.log(formArray);
+                }
+
                 return {
                     status: 200,
                     mensaje: 'List landing',
@@ -1006,7 +1018,7 @@ const resolvers = {
                     SET alias= $2, url= $3, seo= $4, parameters= $5, complete=true
                     WHERE id=$1;
                 `;
-                const value = [id_landing, alias, url, seo, {}];
+                const value = [id_landing, alias, url, seo, parameters];
                 const result = await client.query(query, value);
                 const data = result.rowCount;
 
