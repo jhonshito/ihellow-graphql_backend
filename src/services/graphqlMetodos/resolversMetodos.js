@@ -657,6 +657,21 @@ const resolvers = {
                     }
                 }
 
+                const resultado = JSON.parse(result.parameters)
+                // console.log(resultado)
+                const dataParameters = {}
+
+                if (result && result.parameters && resultado.links) {
+                    resultado?.links?.forEach((link) => {
+                        // console.log(link)
+                        dataParameters[link.nombre] = link.url;
+                    });
+                
+                    result.parameters = dataParameters;
+                    // console.log(dataParameters);
+                }
+
+
                 return{
                     status: 200,
                     mensaje: 'Data company',
@@ -1057,7 +1072,7 @@ const resolvers = {
                     SET name= $2, identify= $3, phones= $4, addresses= $5, country= $6, city= $7, parameters= $8, logo= $9, complete=true
                     WHERE id= $1;
                 `;
-                const value = [id_company, name, identify, phones, addresses, country, city, {}, logo_company];
+                const value = [id_company, name, identify, phones, addresses, country, city, parameters, logo_company];
                 const result = await client.query(query, value);
                 const data = result.rowCount;
     
@@ -1128,9 +1143,46 @@ const resolvers = {
             }finally{
                 client.release();
             }
+        },
+
+        updateProfile: async(_,{id, name, country, phone, city}) => {
+            try {
+                const client = await pool.connect();
+
+                const query = `
+                    UPDATE public.tbuser
+                    SET names= $2, country= $3, phone= $4, city= $5, complete=true
+                    WHERE id= $1;
+                `
+                const value = [id, name, country, phone, city];
+                const result = await client.query(query, value);
+                const data = result.rowCount;
+    
+                client.release();
+
+                if(data <= 0){
+                    return {
+                        status: 404,
+                        mensaje: 'No se pudo actualizar los datos.',
+                        update: false
+                    }
+                }
+
+                return {
+                    status: 200,
+                    mensaje: 'Datos del usuario actualizado',
+                    update: true
+                }
+                
+            } catch (error) {
+                return {
+                    status: 500,
+                    mensaje: 'Ocurrio algo',
+                    error
+                }
+            }
         }
     }
-
 
 }
 

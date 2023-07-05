@@ -2,7 +2,7 @@ const { resolvers } = require('../../graphqlMetodos/resolversMetodos');
 const { convertirToJson } = require("../landing/mutacionJson");
 
 const update_company = async(req, res) => {
-    const { id_company, name, identify, phones, addresses, country, city, pagina_web,linkedin,instagram,facebook,twitter,tiktok,canal_youtube,enlace1,enlace2,enlace3,ciudad,barrio,direccion, recomendacion_card, logo_company
+    const { id_company, name, identify, phones, addresses, country, city, parameter, logo_company
     } = req.body
 
     if(!id_company){
@@ -12,7 +12,7 @@ const update_company = async(req, res) => {
         });
     }
 
-    const parameters = convertirToJson(pagina_web,linkedin,instagram,facebook,twitter,tiktok,canal_youtube,enlace1,enlace2,enlace3,ciudad,barrio,direccion, recomendacion_card );
+    const parameters = convertirToJson(parameter);
 
     const respuesta = await resolvers.Mutation.updataCompany(null, {id_company, name, identify, phones, addresses, country, city, parameters, logo_company});
 

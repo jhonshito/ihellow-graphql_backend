@@ -19,6 +19,7 @@ const { update_card } = require('../constantes/card/updateCard');
 const { update_landing } = require('../constantes/landing/updateLanding');
 const { update_company } = require('../constantes/company/updateCompany');
 const { add_logo_company } = require('../constantes/company/addLogo');
+const { update_usuario } = require('../constantes/auth/updateUser');
 
 const router = Router();
 
@@ -27,6 +28,7 @@ router.post('/register', register);
 router.post('/login', login);
 router.post('/add_foto/:id', add_foto);
 router.get('/data_user/:id', find_user);
+router.put('/update_profile', update_usuario);
 
 // rutas botones
 router.post('/metricas', datos_metricas);
