@@ -1,6 +1,8 @@
 const { pool } = require('../../config/database/db');
 const cloudinary = require('../../config/cloudinary/cloundi');
 const moment = require("moment");
+const transporter = require( "../../config/configEmail/sendEmail");
+const fs = require('fs');
 
 //querys de graphql
 const resolvers = {
@@ -153,6 +155,10 @@ const resolvers = {
                         mensaje: 'No hay usuario'
                     }
                 }
+
+                
+                data.country = JSON.parse(data.country);
+                
 
                 return {
                     status: 200,
@@ -686,7 +692,60 @@ const resolvers = {
                     error
                 }
             }
-        }
+        },
+
+        // enviar correo
+        sendEmail: async(_, {email}) => {
+            try {
+                const client = await pool.connect();
+                const query = `
+                    SELECT id, login FROM tbuser WHERE login = $1
+                `;
+                const value = [email];
+                const result = await client.query(query, value);
+                const data = result.rows[0];
+
+                client.release();
+
+                if(!data){
+                    return {
+                        status: 404,
+                        mensaje: 'Usuario no registrado',
+                    }
+                }
+
+                // const imagePath = '../../img/iHellow-Logo.webp'; // Reemplaza 'nombre_de_la_imagen.jpg' con el nombre de tu imagen
+                // const imageData = fs.readFileSync(imagePath);
+                // const imageBase64 = imageData.toString('base64');
+                // console.log(imageBase64)
+
+                transporter.sendMail({
+    
+                    from: '"Forget password" <iHellow>', // sender address
+                    to: data.login, // list of receivers
+                    subject: "Ihellow", // Subject line
+                    html: `
+                    <p>Por favor haz clic en el siguiente botón para restablecer tu contraseña:</p>
+                    <button style="background-color: #008CBA; color: white; padding: 10px 20px; border: none; border-radius: 5px; text-decoration: none; font-size: 16px;">
+                    <a href="http://localhost:5173/forgetPass/${data.id}" style="color: white; text-decoration: none;">Restablecer contraseña</a>
+                    </button>
+                    <br>
+                    `
+                });
+
+                return {
+                    status: 200,
+                    mensaje: 'Revisa tu correo'
+                }
+                
+            } catch (error) {
+                return {
+                    status: 500,
+                    mensaje: 'Ocurrio un error',
+                    error
+                }
+            }
+        },
     },
 
     Mutation: {
@@ -797,23 +856,25 @@ const resolvers = {
         },
 
         add_fotoPerfil: async(_, {id, tempFilePath}) => {
-            const client = await pool.connect();
-
+            
             try {
+                const client = await pool.connect();
 
                 const uploaded = await cloudinary.uploader.upload(tempFilePath, {
                     public_id: `user_${id}_fotoPerfil`,
                     overwrite: true
                 });
                 const { public_id, url } = uploaded;
-
+                
                 const updateQuery = `
-                  UPDATE tbusers
+                  UPDATE tbuser
                   SET logo = $1
                   WHERE id = $2;
                 `;
                 const updateValues = [url, id];
-                await client.query(updateQuery, updateValues);
+                const data = await client.query(updateQuery, updateValues);
+                const res = data.rowCount
+                console.log(res)
 
                 const selectQuery = `
                   SELECT *
@@ -823,6 +884,8 @@ const resolvers = {
                 const selectValues = [id];
                 const result = await client.query(selectQuery, selectValues);
                 const updatedUser = result.rows[0];
+
+                client.release();
 
                 if (!updatedUser) {
                   return {
@@ -843,8 +906,6 @@ const resolvers = {
                     mensaje: 'Ocurrio un error',
                     error
                 }
-            }finally{
-                client.release();
             }
         },
 
@@ -1024,18 +1085,19 @@ const resolvers = {
 
         },
 
-        updateLanding: async(_, {id_landing, alias, url, seo, parameters}) => {
+        updateLanding: async(_, {id_landing, alias, url, seo, foto, fondo, parameters}) => {
             try {
                 const client = await pool.connect();
 
                 const query = `
                     UPDATE public.tblanding
-                    SET alias= $2, url= $3, seo= $4, parameters= $5, complete=true
+                    SET alias= $2, url= $3, seo= $4, foto= $5, fondo= $6, parameters= $7, complete=true
                     WHERE id=$1;
                 `;
-                const value = [id_landing, alias, url, seo, parameters];
+                const value = [id_landing, alias, url, seo, foto, fondo, parameters];
                 const result = await client.query(query, value);
                 const data = result.rowCount;
+
 
                 client.release();
 
@@ -1145,6 +1207,50 @@ const resolvers = {
             }
         },
 
+        add_img_landing: async(_, {id_landing, tempFilePath, name}) => {
+            
+            try {
+                const client = await pool.connect();
+
+                const query = `
+                    SELECT * FROM tblanding WHERE id = $1;
+                `;
+                const value = [id_landing];
+                const result = await client.query(query, value);
+                const data = result.rows[0];
+
+                if(!data){
+                    return {
+                        status: 404,
+                        mensaje: `No existe landing con este id ${id}`
+                    }
+                }
+
+                const uploaded = await cloudinary.uploader.upload(tempFilePath, {
+                    public_id: `landing_${id_landing}_${name}`,
+                    overwrite: true,
+                    filename_override: name
+                });
+                const { public_id, url, original_filename } = uploaded;
+
+                client.release();
+
+                return {
+                    status: 200,
+                    public_id,
+                    url,
+                    original_filename
+                }
+                
+            } catch (error) {
+                return {
+                    status: 500,
+                    mensaje: 'Ocurrio un error',
+                    error
+                }
+            }
+        },
+
         updateProfile: async(_,{id, name, country, phone, city}) => {
             try {
                 const client = await pool.connect();
@@ -1178,6 +1284,42 @@ const resolvers = {
                 return {
                     status: 500,
                     mensaje: 'Ocurrio algo',
+                    error
+                }
+            }
+        },
+
+        updatePass: async(_, {id, password}) => {
+            try {
+                const client = await pool.connect();
+
+                const query = `
+                    UPDATE tbuser SET password= $2 WHERE id= $1;
+                `
+                const value = [id, password];
+                const result = await client.query(query, value);
+                const data = await result.rowCount
+
+                client.release();
+
+                if(data <= 0){
+                    return {
+                        status: 404,
+                        mensaje: 'No se pudo restablecer el password.',
+                        update: false
+                    }
+                }
+
+                return {
+                    status: 200,
+                    mensaje: 'Password restablecida',
+                    update: true
+                }
+                
+            } catch (error) {
+                return {
+                    status: 500,
+                    mensaje: 'Ocurrio un error',
                     error
                 }
             }

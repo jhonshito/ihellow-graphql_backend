@@ -20,6 +20,9 @@ const { update_landing } = require('../constantes/landing/updateLanding');
 const { update_company } = require('../constantes/company/updateCompany');
 const { add_logo_company } = require('../constantes/company/addLogo');
 const { update_usuario } = require('../constantes/auth/updateUser');
+const { sendCorreo } = require('../constantes/auth/sendCorro');
+const { update_pass } = require('../constantes/auth/UpdatePass');
+const { add_img_landing } = require('../constantes/landing/addImg');
 
 const router = Router();
 
@@ -29,6 +32,8 @@ router.post('/login', login);
 router.post('/add_foto/:id', add_foto);
 router.get('/data_user/:id', find_user);
 router.put('/update_profile', update_usuario);
+router.post('/send_email', sendCorreo);
+router.put('/update_pass', update_pass);
 
 // rutas botones
 router.post('/metricas', datos_metricas);
@@ -41,6 +46,7 @@ router.post('/grafica', grafica);
 router.post('/add_landing', addLanding);
 router.get('/listLandingById/:id', list_landing_by_id);
 router.put('/update_landing', update_landing);
+router.post('/add_img_landing/:id', add_img_landing);
 
 // ruta card
 router.post('/add_card', addCard);
