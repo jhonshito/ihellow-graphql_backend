@@ -4,7 +4,6 @@ const { resolvers } = require('../../graphqlMetodos/resolversMetodos')
 const register = async(req, res) => {
 
     const {token, email, phone, password, city, country, name} = req.body
-    console.log(token, email, phone, password, city, country, name)
 
     if(!token || !email || !phone || !password || !city || !country || !name){
         return res.status(400).json({

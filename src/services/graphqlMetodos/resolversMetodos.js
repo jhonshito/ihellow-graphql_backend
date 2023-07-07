@@ -24,11 +24,18 @@ const resolvers = {
                 if(role.sp_role){
 
                     const query_user = `
-                        SELECT * FROM tbuser WHERE login = $1 AND password = $2
+                        SELECT * FROM tbuser WHERE login = $1 AND password = $2 AND = $3
                     `;
                     const value_user = [namesuser, password];
                     const result_user = await client.query(query_user, value_user);
                     const result = result_user.rows[0];
+
+                    if(result.password == 'google'){
+                        return {
+                            status: 400,
+                            mensaje: 'Debes de iniciar session con google.'
+                        }
+                    }
 
                     const empresario_query = `
                         SELECT id, name FROM tbcompany where id_user = $1;
@@ -132,6 +139,81 @@ const resolvers = {
                 }
             }finally{
                 client.release();
+            }
+        },
+
+        loginWidthFirebas: async(_,{email, token}) => {
+            try {
+                const client = await pool.connect();
+                const query = `
+                    SELECT login, role FROM tbuser WHERE login = $1
+                `
+                const value = [email];
+                const result = await client.query(query, value);
+                const data = result.rows[0];
+                if(!data){
+                    // console.log('no existe')
+                    return data
+                }
+
+                if(data?.role){
+                    return {
+                        mensaje: 'empresa'
+                    }
+                }else{
+                    const queryToken = `
+                        SELECT a.id,a.role,a.names,a.logo as avatar,b.id as id_card,c.id as id_landing
+                        FROM tbuser a,tbcard b,tblanding c
+                        WHERE a.login = $1
+                        AND a.token = $2
+                        AND a.id=b.id_user
+                        AND b.fid_landing=c.id;
+                    `;
+                    const valueToken = [data?.login, token];
+                    const resultToken = await client.query(queryToken, valueToken);
+                    const datos = resultToken.rows[0];
+                    let logoUrl = datos.avatar
+
+                    // Buscar la imagen en Cloudinary por ID del usuario
+                    const cloudinaryResult = await cloudinary.search
+                    .expression(`public_id:${datos.id}`)
+                    .execute();
+
+                    if (cloudinaryResult.total_count > 0) {
+                        // Obtener la URL de la imagen encontrada en Cloudinary
+                        logoUrl = cloudinaryResult.resources[0].secure_url;
+                    }
+
+                    if (!datos) {
+                        return {
+                            status: 404,
+                            mensaje: 'Credenciales invalidas',
+                            auth: false
+                        }
+                    }
+
+                    return {
+                        status: 200,
+                        mensaje: 'usuario',
+                        auth: true,
+                        data: {
+                            img: logoUrl,
+                            id: datos.id,
+                            id_card: datos.id_card,
+                            id_landing: datos.id_landing,
+                            names: datos.names,
+                            role: datos.role
+                        }
+                    };
+
+                } 
+                
+            } catch (error) {
+                return {
+                    status: 500,
+                    mensaje: 'Ocurrio un error',
+                    error
+                }
             }
         },
 
@@ -855,6 +937,82 @@ const resolvers = {
             }
         },
 
+        addUserForGoogle: async(_, {token, email, name, photo}) => {
+            try {
+                const client = await pool.connect();
+
+                const query = `
+                    SELECT * FROM tbuser WHERE login = $1
+                `;
+
+                const value = [email]
+                const result = await client.query(query, value);
+                const usuario = result.rows[0];
+                if(usuario){
+                    return {
+                        status: 400,
+                        mensaje: 'Ya existe alguien registrado con tu correo electronico'
+                    }
+                }else {
+                    
+                    const querys = `
+                        SELECT sp_adduser($1, $2, 'google', null, null, null, $3) AS result
+                    `;
+                    const values = [token, email, name];
+                    const results = await client.query(querys, values);
+                    const user = results.rows[0].result;
+
+                    if(user){
+
+                        const queryConsult = `
+                            SELECT id_user, fid_landing FROM tbcard WHERE id = $1
+                        `;
+                        const valueConsult = [user]
+                        const result = await client.query(queryConsult, valueConsult);
+                        const card = result.rows[0];
+
+                        const queryUser = `
+                            SELECT * FROM tbuser WHERE id = $1
+                        `;
+
+                        const valueUser = [card.id_user]
+                        const resultUser = await client.query(queryUser, valueUser);
+                        const usuario = resultUser.rows[0];
+
+                        return {
+                            status: 200,
+                            mensaje: 'Usuario registrado.',
+                            data: {
+                                id: usuario.id,
+                                token: usuario.token,
+                                phone: usuario.phone,
+                                role: usuario.role,
+                                logo: usuario.logo,
+                                city: usuario.city,
+                                country: usuario.country,
+                                names: usuario.names,
+                                id_landing: card.fid_landing
+                            }
+                            // usuario
+                        }
+
+                    }else {
+                        return {
+                            status: 404,
+                            mensaje: 'Usuario no registrado'
+                        }
+                    }
+                }
+                
+            } catch (error) {
+                return {
+                    status: 500,
+                    mensaje: 'Ocurrio un error',
+                    error
+                }
+            }
+        },
+
         add_fotoPerfil: async(_, {id, tempFilePath}) => {
             
             try {
@@ -862,7 +1020,8 @@ const resolvers = {
 
                 const uploaded = await cloudinary.uploader.upload(tempFilePath, {
                     public_id: `user_${id}_fotoPerfil`,
-                    overwrite: true
+                    overwrite: true,
+                    folder: `img_users/user_${id}`
                 });
                 const { public_id, url } = uploaded;
                 
@@ -873,8 +1032,7 @@ const resolvers = {
                 `;
                 const updateValues = [url, id];
                 const data = await client.query(updateQuery, updateValues);
-                const res = data.rowCount
-                console.log(res)
+                const res = data.rowCount;
 
                 const selectQuery = `
                   SELECT *
@@ -1025,7 +1183,8 @@ const resolvers = {
                 const uploaded = await cloudinary.uploader.upload(tempFilePath, {
                     public_id: `card_${id_card}_${name}`,
                     overwrite: true,
-                    filename_override: name
+                    filename_override: name,
+                    folder: `img_users/user_${data?.id_user}`
                 });
                 const { public_id, url, original_filename } = uploaded;
 
@@ -1185,7 +1344,8 @@ const resolvers = {
                 const uploaded = await cloudinary.uploader.upload(tempFilePath, {
                     public_id: `company_${id_company}_${name}`,
                     overwrite: true,
-                    filename_override: name
+                    filename_override: name,
+                    folder: `img_users/user_${data?.id_user}`
                 });
                 const { public_id, url, original_filename } = uploaded;
 
@@ -1226,10 +1386,25 @@ const resolvers = {
                     }
                 }
 
+                const queryCard = `
+                    SELECT id_user FROM tbcard WHERE fid_landing = $1;
+                `;
+                const valueCard = [data?.id];
+                const resultCard = await client.query(queryCard, valueCard);
+                const dataCar = resultCard.rows[0];
+
+                if(!dataCar){
+                    return {
+                        status: 404,
+                        mensaje: `No existe card asociada a tu landing`
+                    }
+                }
+
                 const uploaded = await cloudinary.uploader.upload(tempFilePath, {
                     public_id: `landing_${id_landing}_${name}`,
                     overwrite: true,
-                    filename_override: name
+                    filename_override: name,
+                    folder: `img_users/user_${dataCar?.id_user}`
                 });
                 const { public_id, url, original_filename } = uploaded;
 

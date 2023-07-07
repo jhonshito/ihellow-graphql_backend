@@ -23,6 +23,7 @@ const { update_usuario } = require('../constantes/auth/updateUser');
 const { sendCorreo } = require('../constantes/auth/sendCorro');
 const { update_pass } = require('../constantes/auth/UpdatePass');
 const { add_img_landing } = require('../constantes/landing/addImg');
+const { registe_google } = require('../constantes/auth/registeGoogle');
 
 const router = Router();
 
@@ -34,6 +35,7 @@ router.get('/data_user/:id', find_user);
 router.put('/update_profile', update_usuario);
 router.post('/send_email', sendCorreo);
 router.put('/update_pass', update_pass);
+router.post('/register_google', registe_google);
 
 // rutas botones
 router.post('/metricas', datos_metricas);
