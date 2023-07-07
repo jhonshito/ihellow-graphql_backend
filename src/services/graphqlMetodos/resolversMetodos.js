@@ -24,7 +24,7 @@ const resolvers = {
                 if(role.sp_role){
 
                     const query_user = `
-                        SELECT * FROM tbuser WHERE login = $1 AND password = $2 AND = $3
+                        SELECT * FROM tbuser WHERE login = $1 AND password = $2
                     `;
                     const value_user = [namesuser, password];
                     const result_user = await client.query(query_user, value_user);
@@ -758,6 +758,8 @@ const resolvers = {
                     result.parameters = dataParameters;
                     // console.log(dataParameters);
                 }
+
+                result.country = JSON.parse(result.country);
 
 
                 return{
