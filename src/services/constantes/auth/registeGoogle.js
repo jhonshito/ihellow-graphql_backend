@@ -2,7 +2,6 @@ const { resolvers } = require('../../graphqlMetodos/resolversMetodos')
 
 const registe_google = async(req, res) => {
     const {token, email, name, photo} = req.body
-    console.log(token, email, name, photo)
 
     if(!token || !email || !name || !photo){
         return res.status(400).json({
@@ -11,7 +10,7 @@ const registe_google = async(req, res) => {
         })
     };
 
-    const user = await resolvers.Mutation.addUserForGoogle(null,
+    const user = await resolvers.Mutation.addUserForFirebase(null,
         {token, email, name, photo}    
     )
 

@@ -939,9 +939,10 @@ const resolvers = {
             }
         },
 
-        addUserForGoogle: async(_, {token, email, name, photo}) => {
+        addUserForFirebase: async(_, {token, email, name, photo}) => {
             try {
                 const client = await pool.connect();
+                console.log(token, email, name, photo)
 
                 const query = `
                     SELECT * FROM tbuser WHERE login = $1
@@ -965,6 +966,33 @@ const resolvers = {
                     const user = results.rows[0].result;
 
                     if(user){
+
+                        const cardQuery = `
+                            SELECT id_user FROM tbcard WHERE id = ${user}
+                        `;
+                        const resultCard = await client.query(cardQuery);
+                        const dataCard = resultCard.rows[0];
+
+                        if(!dataCard){
+                            return {
+                                status: 404,
+                                mensaje: 'No exite card registrada'
+                            }
+                        }
+
+                        const queryPhoto = `
+                            UPDATE public.tbuser SET logo = $1 WHERE id = $2
+                        `
+                        const valuePhoto = [photo, dataCard?.id_user];
+                        const resultPhoto = await client.query(queryPhoto, valuePhoto);
+                        const dataPhoto = resultPhoto.rowCount;
+
+                        if(dataPhoto <= 0){
+                            return {
+                                status: 404,
+                                mensaje: 'No se pudo agregar la foto del usuario'
+                            }
+                        }
 
                         const queryConsult = `
                             SELECT id_user, fid_landing FROM tbcard WHERE id = $1

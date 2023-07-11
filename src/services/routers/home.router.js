@@ -62,5 +62,38 @@ router.get('/dataCompanyByInd/:id', lis_campany_by_id);
 router.post('/add_logo_company/:id', add_logo_company);
 router.put('/update_company_card/', update_company);
 
+// router.get('/auth/instagram', (req, res) => {
+//     const clientId = '3547632535556841';
+//     const redirectUri = 'http://localhost:5000/auth/instagram/callback';
+//     const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code`;
+
+//     console.log(authUrl)
+//     res.redirect(authUrl);
+// })
+
+// router.get('/auth/instagram/callback', async (req, res) => {
+//     const code = req.query.code;
+//     const clientId = '3547632535556841';
+//     const clientSecret = '63b095be278a970ed10cb2370a474348';
+//     const redirectUri = 'http://localhost:5000/auth/instagram/callback';
+  
+//     try {
+//       const response = await axios.post('https://api.instagram.com/oauth/access_token', {
+//         client_id: clientId,
+//         client_secret: clientSecret,
+//         grant_type: 'authorization_code',
+//         redirect_uri: redirectUri,
+//         code: code,
+//       });
+  
+//       // Aquí puedes procesar la respuesta de Instagram y hacer lo que desees con los datos del usuario
+  
+//       res.send(response.data);
+//     } catch (error) {
+//       console.error('Error al obtener el token de acceso de Instagram:', error.message);
+//       res.status(500).send('Error al obtener el token de acceso de Instagram');
+//     }
+//   });
+
 
 module.exports = router

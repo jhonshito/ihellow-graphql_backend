@@ -5,7 +5,7 @@
 /**
 * @swagger
 * tags:
-*   - name: Usuarios
+*   - name: Auth
 *     description: Operaciones relacionadas con usuarios
 *   - name: Métricas
 *     description: Operaciones relacionadas con métricas
@@ -19,8 +19,8 @@
  * /login:
  *       post:
  *         tags:
- *           - Usuarios
- *         description: Con esta ruta podras hacer el login del usuario
+ *           - Auth
+ *         description: Con esta ruta podras hacer el login del usuario. el parametro llamado ismetodo tiene que tener como valor login o firebase eso nos indicara que tipo de login se hara
  *         requestBody:
  *            required: true
  *            content:
@@ -31,6 +31,10 @@
  *                    namesuser:
  *                      type: string
  *                    password:
+ *                      type: string
+ *                    ismetodo:
+ *                      type: string
+ *                    toke:
  *                      type: string
  * 
  *         responses:
@@ -58,6 +62,49 @@
  *                    example: true
  *          400 - 500:
  *            description: Mensajes de error y alertas sobres campos requeridos
+ * /add_foto/:id:
+ *          post:
+ *             tags:
+ *               - Auth
+ *             description: Agrega foto de perfil del usuario.
+ *             parameters:
+ *               - in: path
+ *                 name: id
+ *                 required: true
+ *                 description: Debes de enviar el id del usuario como parametro a través de la url de la api.
+ *                 schema:
+ *                  id:
+ *                    type: string
+ *             requestBody:
+*                required: true
+*                content:
+*                  multipart/form-data:
+*                    schema:
+*                      type: object
+*                      properties:
+*                        file:
+*                          type: file
+*                          format: binary
+*                          description: Debes de enviar una imagen con el nombre file.
+*             responses:
+*                200:
+*                  description: Foto de perfil agregada exitosamente.
+*                  content:
+*                       application/json:
+*                         schema:
+*                           type: object
+*                           properties:
+*                             status:
+*                               type: integer
+*                               example: 200
+*                             mensaje:
+*                               type: string
+*                               example: Imagen agregada exitosamente
+*                             img:
+*                               type: url
+*                               example: https://img_example_foto_perfil
+*                400 - 500:
+*                  description: Mensajes de error y alertas sobre campos requeridos o errores en la solicitud.
  * /agregar_boton:
  *               post:
  *                  tags:

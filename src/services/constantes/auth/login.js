@@ -40,8 +40,8 @@ const login = async(req, res) => {
             {email: namesuser, token}    
         )
         if(!user){
-            const user = await resolvers.Mutation.addUserForGoogle(null, {token, email: namesuser, name, photo});
-            console.log(photo)
+            const user = await resolvers.Mutation.addUserForFirebase(null, {token, email: namesuser, name, photo});
+            console.log(token, namesuser, name, photo)
             res.send(user);
         }else {
 
