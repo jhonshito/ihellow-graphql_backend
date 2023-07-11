@@ -7,8 +7,8 @@
 * tags:
 *   - name: Auth
 *     description: Operaciones relacionadas con usuarios
-*   - name: Métricas
-*     description: Operaciones relacionadas con métricas
+*   - name: buttons
+*     description: Operaciones relacionadas con los botones
 *   - name: Agregar Botón
 *     description: Operaciones relacionadas con agregar botón
 */
@@ -68,7 +68,7 @@
  *               - Auth
  *             description: Agrega foto de perfil del usuario.
  *             parameters:
- *               - in: path
+ *               - in: query
  *                 name: id
  *                 required: true
  *                 description: Debes de enviar el id del usuario como parametro a través de la url de la api.
@@ -105,6 +105,381 @@
 *                               example: https://img_example_foto_perfil
 *                400 - 500:
 *                  description: Mensajes de error y alertas sobre campos requeridos o errores en la solicitud.
+ * 
+ * /data_user/:id:
+ *               get:
+ *                  tags:
+ *                    - Auth
+ *                  description: Con esta ruta podras obtener los datos del usuario a través de su (id).
+ *                  parameters:
+ *                    - in: query
+ *                      name: id
+ *                      description: Trae los datos del usuario
+ *                      example: 2
+ *                      schama:
+ *                          type: string
+ *                  responses:
+ *                   200:
+ *                     description: Respuesta exitosa de los datos del usuario
+ *                     content:
+ *                      application/json:
+ *                        schema:
+ *                          type: object
+ *                          properties:
+ *                            status:
+ *                              type: integer
+ *                              example: 200
+ *                            mansaje:
+ *                              type: string
+ *                              example: usuario
+ *                            data:
+ *                              type: object
+ *                              example:
+ *                                id: 2
+ *                                toke: token de firebase
+ *                                login: nombreusuario@gmail.com
+ *                                phone: +57376576
+ *                                role: boleano
+ *                                logo: http://img_user_perfil.jpg
+ *                                city: 76000
+ *                                country:
+ *                                    value: colombia
+ *                                    label: bandera de colombia
+ *                                name: nombre del usuario
+ *                                complete: boleano
+ *                   400:
+ *                      content:
+ *                       application/json:
+ *                         schema:
+ *                           type: object
+ *                           properties:
+ *                             status:
+ *                              type: integer
+ *                              example: 400
+ *                             mensaje:
+ *                              type: string
+ *                              example: El id del usuario es requerido.
+ *                   404:
+ *                      content:
+ *                       application/json:
+ *                         schema:
+ *                           type: object
+ *                           properties:
+ *                             status:
+ *                              type: integer
+ *                              example: 404
+ *                             mensaje:
+ *                              type: string
+ *                              example: No hay usuario
+ *                   500:
+ *                      content:
+ *                       application/json:
+ *                         schema:
+ *                           type: object
+ *                           properties:
+ *                             status:
+ *                              type: integer
+ *                              example: 500
+ *                             mensaje:
+ *                              type: string
+ *                              example: Ocurrio un error
+ * 
+ * /update_profile:
+ *                put:
+ *                  tags:
+ *                    - Auth
+ *                  description: Con esta ruta podras actualizar los datos del usuario.
+ *                  requestBody:
+ *                     required: true
+ *                     content:
+ *                       application/json:
+ *                         schema:
+ *                           type: object
+ *                           properties:
+ *                             id:
+ *                              type: string
+ *                             name:
+ *                              type: string
+ *                             country:
+ *                              type: object
+ *                             phone:
+ *                              type: string
+ *                             city:
+ *                              type: string
+ *                  responses:
+ *                   200:
+ *                      content:
+ *                        application/json:
+ *                          schema:
+ *                            type: object
+ *                            properties:
+ *                              status:
+ *                                type: integer
+ *                                example: 200
+ *                              mensaje:
+ *                                 type: string
+ *                                 example: Datos del usuario actualizado
+ *                              update:
+ *                                 type: boleano
+ *                                 example: true
+ *                   400:
+ *                      content:
+ *                        application/json:
+ *                          schema:
+ *                            type: object
+ *                            properties:
+ *                              status:
+ *                                type: integer
+ *                                example: 400
+ *                              mensaje:
+ *                                 type: string
+ *                                 example: El id del usuario es requerido.
+ *                   404:
+ *                      content:
+ *                        application/json:
+ *                          schema:
+ *                            type: object
+ *                            properties:
+ *                              status:
+ *                                type: integer
+ *                                example: 404
+ *                              mensaje:
+ *                                 type: string
+ *                                 example: No se pudo actualizar los datos.
+ *                              update:
+ *                                 type: boleano
+ *                                 example: false
+ *                   500:
+ *                      content:
+ *                        application/json:
+ *                          schema:
+ *                            type: object
+ *                            properties:
+ *                              status:
+ *                                type: integer
+ *                                example: 500
+ *                              mensaje:
+ *                                 type: string
+ *                                 example: Ocurrio algo
+ * /send_email:
+ *            post:
+ *               tags:
+ *                 - Auth
+ *               description: Con esta ruta podras enviar un correo para restablecer la contraseña de un usuario.
+ *               requestBody:
+ *                  required: true
+ *                  content:
+ *                    application/json:
+ *                      schema:
+ *                        type: object
+ *                        properties:
+ *                          email:
+ *                           type: string
+ *                           example: usuario@correo.com
+ *               responses:
+ *                200:
+ *                   content:
+ *                        application/json:
+ *                          schema:
+ *                            type: object
+ *                            properties:
+ *                              status:
+ *                                type: integer
+ *                                example: 200
+ *                              mensaje:
+ *                                 type: string
+ *                                 example: Revisa tu correo
+ *                400:
+ *                   content:
+ *                        application/json:
+ *                          schema:
+ *                            type: object
+ *                            properties:
+ *                              status:
+ *                                type: integer
+ *                                example: 400
+ *                              mensaje:
+ *                                 type: string
+ *                                 example: El email es requerido.
+ *                404:
+ *                   content:
+ *                        application/json:
+ *                          schema:
+ *                            type: object
+ *                            properties:
+ *                              status:
+ *                                type: integer
+ *                                example: 404
+ *                              mensaje:
+ *                                 type: string
+ *                                 example: Usuario no registrado
+ *                500:
+ *                   content:
+ *                        application/json:
+ *                          schema:
+ *                            type: object
+ *                            properties:
+ *                              status:
+ *                                type: integer
+ *                                example: 500
+ *                              mensaje:
+ *                                 type: string
+ *                                 example: Ocurrio un error
+ * 
+ * /update_pass:
+ *             put:
+ *               tags:
+ *                 - Auth
+ *               description: Con esta ruta podras restablecer la contraseña del usuario debes de enviar el id del usuario y su nueva contraseña
+ *               requestBody:
+ *                  required: true
+ *                  content:
+ *                    application/json:
+ *                      schema:
+ *                        type: object
+ *                        properties:
+ *                          id:
+ *                           type: string
+ *                          password:
+ *                            type: string
+ *               responses:
+ *                200:
+ *                   content:
+ *                        application/json:
+ *                          schema:
+ *                            type: object
+ *                            properties:
+ *                              status:
+ *                                type: integer
+ *                                example: 200
+ *                              mensaje:
+ *                                 type: string
+ *                                 example: Password restablecida
+ *                              update:
+ *                                  type: boleano
+ *                                  example: true
+ *                400:
+ *                   content:
+ *                        application/json:
+ *                          schema:
+ *                            type: object
+ *                            properties:
+ *                              status:
+ *                                type: integer
+ *                                example: 400
+ *                              mensaje:
+ *                                 type: string
+ *                                 example: Los datos son requeridos.
+ *                404:
+ *                   content:
+ *                        application/json:
+ *                          schema:
+ *                            type: object
+ *                            properties:
+ *                              status:
+ *                                type: integer
+ *                                example: 404
+ *                              mensaje:
+ *                                 type: string
+ *                                 example: No se pudo restablecer el password.
+ *                              update:
+ *                                  type: boleano
+ *                                  example: false
+ *                500:
+ *                   content:
+ *                        application/json:
+ *                          schema:
+ *                            type: object
+ *                            properties:
+ *                              status:
+ *                                type: integer
+ *                                example: 500
+ *                              mensaje:
+ *                                 type: string
+ *                                 example: Ocurrio un error
+ * 
+ * /register_google:
+ *                 post:
+ *                    tags:
+ *                      - Auth
+ *                    description: Con esta ruta podras registrar el usuario con google
+ *                    requestBody:
+ *                       required: true
+ *                       content:
+ *                         application/json:
+ *                           schema:
+ *                             type: object
+ *                             properties:
+ *                               token:
+ *                                type: string
+ *                               email:
+ *                                type: string
+ *                               name:
+ *                                type: string
+ *                               photo:
+ *                                type: string
+ *                    responses:
+ *                     200:
+ *                       content:
+ *                        application/json:
+ *                          schema:
+ *                            type: object
+ *                            properties:
+ *                              status:
+ *                                type: integer
+ *                                example: 200
+ *                              mensaje:
+ *                                 type: string
+ *                                 example: usuario
+ *                              data:
+ *                                 type: object
+ *                                 example:
+ *                                  img: http://mi_image.jpg
+ *                                  id: usuario id
+ *                                  id_card: card id
+ *                                  id_landing: landing id
+ *                                  name: nombre del usuario
+ *                                  role: usuario role
+ *                     400:
+ *                       content:
+ *                        application/json:
+ *                          schema:
+ *                            type: object
+ *                            properties:
+ *                              status:
+ *                                type: integer
+ *                                example: 400
+ *                              mensaje:
+ *                                 type: string
+ *                                 example: los campos no pueden estar vacios
+ *                     404:
+ *                       content:
+ *                        application/json:
+ *                          schema:
+ *                            type: object
+ *                            properties:
+ *                              status:
+ *                                type: integer
+ *                                example: 404
+ *                              mensaje:
+ *                                 type: string
+ *                                 example: Credenciales invalidas.
+ *                              auth:
+ *                                  type: boleano
+ *                                  example: true
+ *                     500:
+ *                       content:
+ *                        application/json:
+ *                          schema:
+ *                            type: object
+ *                            properties:
+ *                              status:
+ *                                type: integer
+ *                                example: 500
+ *                              mensaje:
+ *                                 type: string
+ *                                 example: Ocurrio un error
+ * 
  * /agregar_boton:
  *               post:
  *                  tags:
