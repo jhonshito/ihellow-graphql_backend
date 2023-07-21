@@ -5,7 +5,7 @@ const swaggerDef = require("./swaggerDef");
 
 const spacs = swaggerJsdoc({
     swaggerDefinition: swaggerDef,
-    apis: ["./routers/docs.router.js"]
+    apis: ["./src/config/swgger/documetacion.js"]
 });
 
 // esta es la ruta que funciona

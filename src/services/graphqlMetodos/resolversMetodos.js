@@ -257,6 +257,77 @@ const resolvers = {
             }
         },
 
+        // find all users
+        allUsers: async(_, {}) => {
+
+            try {
+                const client = await pool.connect();
+
+                const query = `SELECT id, logo, names, complete FROM tbuser`
+                const result = await client.query(query);
+                const data = result.rows
+
+                client.release();
+
+                if(!data){
+                    return {
+                        status: 404,
+                        mensaje: 'No hay usuarios resgistrados'
+                    }
+                }
+
+                return {
+                    status: 200,
+                    mensaje: 'All users',
+                    data
+                }
+                
+            } catch (error) {
+                return {
+                    status: 500,
+                    mensaje: 'Ocurrio un error',
+                    error
+                }
+            }
+
+        },
+
+        allLanding: async(_, {}) => {
+            try {
+                
+                const client = await pool.connect();
+
+                const query = `
+                    SELECT * FROM tblanding ORDER BY id
+                `;
+                const result = await client.query(query);
+                const data = result.rows;
+
+                client.release();
+
+                if(!data){
+                    return {
+                        status: 404,
+                        mensaje: 'No hay landings'
+                    }
+                }
+
+                return {
+                    status: 200,
+                    mensaje: 'All landings',
+                    data
+                }
+
+            } catch (error) {
+                return {
+                    status: 500,
+                    mensaje: 'Ocurrio un error',
+                    error
+                }    
+            }
+
+        },
+
         // grafica
         grafica_data: async(_,{ id_landing, fechaInicial, fechaFinal }) => {
             try {
@@ -680,7 +751,6 @@ const resolvers = {
         },
 
         list_landing_by_id: async(_, {id_card}) => {
-
             try {
                 const client = await pool.connect();
                 const query = `

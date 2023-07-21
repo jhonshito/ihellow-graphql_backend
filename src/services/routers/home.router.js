@@ -24,6 +24,9 @@ const { sendCorreo } = require('../constantes/auth/sendCorro');
 const { update_pass } = require('../constantes/auth/UpdatePass');
 const { add_img_landing } = require('../constantes/landing/addImg');
 const { registe_google } = require('../constantes/auth/registeGoogle');
+const { all_users } = require('../constantes/auth/allusers');
+const { all_landing } = require('../constantes/landing/all_landing');
+const { alias_landing } = require('../constantes/landing/traerAlisLanding');
 
 const router = Router();
 
@@ -36,6 +39,7 @@ router.put('/update_profile', update_usuario);
 router.post('/send_email', sendCorreo);
 router.put('/update_pass', update_pass);
 router.post('/register_google', registe_google);
+router.get('/all_users', all_users);
 
 // rutas botones
 router.post('/metricas', datos_metricas);
@@ -49,6 +53,8 @@ router.post('/add_landing', addLanding);
 router.get('/listLandingById/:id', list_landing_by_id);
 router.put('/update_landing', update_landing);
 router.post('/add_img_landing/:id', add_img_landing);
+router.get('/all_landing', all_landing);
+router.get('/alias_landing/:id', alias_landing);
 
 // ruta card
 router.post('/add_card', addCard);
