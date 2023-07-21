@@ -298,7 +298,7 @@ const resolvers = {
                 const client = await pool.connect();
 
                 const query = `
-                    SELECT * FROM tblanding ORDER BY id
+                    SELECT * FROM tblanding WHERE complete = true ORDER BY id
                 `;
                 const result = await client.query(query);
                 const data = result.rows;
