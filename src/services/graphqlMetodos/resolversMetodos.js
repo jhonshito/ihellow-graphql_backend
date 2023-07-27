@@ -263,7 +263,11 @@ const resolvers = {
             try {
                 const client = await pool.connect();
 
-                const query = `SELECT id, logo, names, complete FROM tbuser`
+                const query = `SELECT tbuser.id, tbuser.logo, tbuser.names, tblanding.complete as comple_landing, tblanding.alias
+                FROM tbuser
+                JOIN tbcard ON tbuser.id = tbcard.id_user
+                JOIN tblanding ON tbcard.fid_landing = tblanding.id
+                WHERE tblanding.complete = true;`
                 const result = await client.query(query);
                 const data = result.rows
 
@@ -298,7 +302,11 @@ const resolvers = {
                 const client = await pool.connect();
 
                 const query = `
-                    SELECT * FROM tblanding WHERE complete = true ORDER BY id
+                    SELECT tblanding.id, tblanding.alias, tblanding.seo, tblanding.parameters, tblanding.complete, tblanding.foto, tblanding.fondo, tbuser.names as name_user
+                    FROM tbuser
+                    JOIN tbcard ON tbuser.id = tbcard.id_user
+                    JOIN tblanding ON tbcard.fid_landing = tblanding.id
+                    WHERE tblanding.complete = true
                 `;
                 const result = await client.query(query);
                 const data = result.rows;
@@ -774,7 +782,11 @@ const resolvers = {
 
                 if (result && result.parameters && result.parameters.links) {
                     result.parameters.links.forEach((link) => {
-                      dataParameters[link.nombre] = link.url;
+                        dataParameters[link.name] = {
+                            url: link.url,
+                            img: link.img,
+                            color: link.color,
+                        };
                     });
                 
                     result.parameters.links = dataParameters;
@@ -914,17 +926,22 @@ const resolvers = {
                 const values = [fid_landing, name_event];
                 const result = await client.query(query, values);
 
-                if (result.rowCount > 0) {
+                if (result.rowCount <= 0) {
                     return {
-                        status: 200,
-                        mensaje: 'click agregado'
-                    };
+                        status: 404,
+                        mensaje: 'No se puedo agregar el evento.'
+                    }
                 }
+
+                return {
+                    status: 200,
+                    mensaje: 'click agregado'
+                };
                 
             } catch (error) {
                  return {
                     status: 500,
-                    mensaje: 'No se pudo agregar el nuevo click:',
+                    mensaje: 'Ocurrio un error.',
                     error
                 }
             }finally{
@@ -1147,7 +1164,7 @@ const resolvers = {
 
                 if (!updatedUser) {
                   return {
-                    status: 400,
+                    status: 404,
                     mensaje: 'No se encontró el usuario',
                   };
                 }

@@ -42,8 +42,10 @@ function convertirToJson(parameter) {
         if (item.hasOwnProperty('name') && item.hasOwnProperty('url') && item.url !== '') {
             // Crea un nuevo objeto con las propiedades "nombre" y "url"
             const linkObj = {
-                nombre: item.name,
-                url: item.url
+                name: item.name,
+                url: item.url,
+                img: item.img,
+                color: item.color
             };
 
             // Agrega el nuevo objeto al array de links
